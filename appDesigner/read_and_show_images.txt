@@ -1,0 +1,209 @@
+classdef theFirstApp < matlab.apps.AppBase
+
+    % Properties that correspond to app components
+    properties (Access = public)
+        THAOTCCBNTRNNHUIFigure    matlab.ui.Figure
+        ThaotccbntrnnhLabel       matlab.ui.control.Label
+        Button_DocAnh             matlab.ui.control.Button
+        Button_ChuyenAnhDaCapXam  matlab.ui.control.Button
+        Button_ChuyenAnhNhiPhan   matlab.ui.control.Button
+        Label_ThongTinAnh         matlab.ui.control.Label
+        Label                     matlab.ui.control.Label
+        TextArea_ThongTinAnh      matlab.ui.control.TextArea
+        Label_HienSoAnh           matlab.ui.control.Label
+        Axes_AnhGoc               matlab.ui.control.UIAxes
+        Axes_AnhDaCapXam          matlab.ui.control.UIAxes
+        Axes_AnhNhiPhan           matlab.ui.control.UIAxes
+    end
+
+    
+    properties (Access = private)
+         % Description
+         % Lưu trữ ảnh đọc vào
+         img
+         % lưu trữ colormap của ảnh đọc vào
+         map
+         % lưu trữ thông tin loại ảnh (RGB, grayscale, indexed...)
+         colortype 
+    end
+    
+
+    % Callbacks that handle component events
+    methods (Access = private)
+
+        % Button pushed function: Button_DocAnh
+        function Button_DocAnhPushed(app, event)
+                [filename, path] = uigetfile({'*.png'; '*.jpg'; '*.tif'}, 'Chọn ảnh');
+                file = strcat(path, filename);
+                [app.img, app.map] = imread(file);
+                imshow(app.img, app.map, 'Parent', app.Axes_AnhGoc);
+                    
+                info = imfinfo(file);
+                arr = [];
+                if length(info) > 1
+                    app.Label_HienSoAnh.Text = strcat(strcat("Tập tin chứa: ", num2str(length(info))), " ảnh");
+                    arr = [arr; "THÔNG TIN ẢNH ĐẦU TIÊN"];
+                    info = info(1);
+                else
+                    app.Label_HienSoAnh.Text = "";
+                end
+                app.colortype = info.ColorType;
+                fields = fieldnames(info);
+                for i = 1 : length(fields)
+                    if isnumeric(info.(char(fields(i))))
+                        value = num2str(info.(char(fields(i))));
+                    else
+                        value = info.(char(fields(i)));
+                    end
+                    str = strcat(fields(i), ": ", value);
+                    arr = [arr; str];
+                    arr = [arr; '-----------------------'];
+                end
+                app.TextArea_ThongTinAnh.Value = arr;
+        end
+
+        % Button pushed function: Button_ChuyenAnhDaCapXam
+        function Button_ChuyenAnhDaCapXamPushed(app, event)
+            if app.colortype == "truecolor"
+                rgb = app.img;
+                gray = rgb2gray(rgb);
+                imshow(gray, 'Parent', app.Axes_AnhDaCapXam);
+            elseif app.colortype == "indexed"
+                ind = app.img;
+                gray = ind2gray(ind, app.map);
+                imshow(gray, 'Parent', app.Axes_AnhDaCapXam);
+            else
+                gray = app.img;
+                imshow(gray, 'Parent', app.Axes_AnhDaCapXam);
+            end
+        end
+
+        % Button pushed function: Button_ChuyenAnhNhiPhan
+        function Button_ChuyenAnhNhiPhanPushed(app, event)
+            if app.colortype == "truecolor"
+                rgb = app.img;
+                gray = rgb2gray(rgb);
+                bw = imbinarize(gray);
+                imshow(bw, 'Parent', app.Axes_AnhNhiPhan);
+            elseif app.colortype == "indexed"
+                ind = app.img;
+                gray = ind2gray(ind, app.map);
+                bw = imbinarize(gray);
+                imshow(bw, 'Parent', app.Axes_AnhNhiPhan);
+            else
+                bw = im2bw(app.img);
+                imshow(bw, 'Parent', app.Axes_AnhNhiPhan);
+            end
+        end
+    end
+
+    % Component initialization
+    methods (Access = private)
+
+        % Create UIFigure and components
+        function createComponents(app)
+
+            % Create THAOTCCBNTRNNHUIFigure and hide until all components are created
+            app.THAOTCCBNTRNNHUIFigure = uifigure('Visible', 'off');
+            app.THAOTCCBNTRNNHUIFigure.Position = [100 100 640 480];
+            app.THAOTCCBNTRNNHUIFigure.Name = 'THAO TÁC CƠ BẢN TRÊN ẢNH';
+
+            % Create ThaotccbntrnnhLabel
+            app.ThaotccbntrnnhLabel = uilabel(app.THAOTCCBNTRNNHUIFigure);
+            app.ThaotccbntrnnhLabel.HorizontalAlignment = 'center';
+            app.ThaotccbntrnnhLabel.FontSize = 20;
+            app.ThaotccbntrnnhLabel.FontWeight = 'bold';
+            app.ThaotccbntrnnhLabel.FontColor = [1 0 0];
+            app.ThaotccbntrnnhLabel.Position = [15 441 604 24];
+            app.ThaotccbntrnnhLabel.Text = 'Thao tác cơ bản trên ảnh';
+
+            % Create Button_DocAnh
+            app.Button_DocAnh = uibutton(app.THAOTCCBNTRNNHUIFigure, 'push');
+            app.Button_DocAnh.ButtonPushedFcn = createCallbackFcn(app, @Button_DocAnhPushed, true);
+            app.Button_DocAnh.Position = [46 27 100 22];
+            app.Button_DocAnh.Text = 'Đọc ảnh';
+
+            % Create Button_ChuyenAnhDaCapXam
+            app.Button_ChuyenAnhDaCapXam = uibutton(app.THAOTCCBNTRNNHUIFigure, 'push');
+            app.Button_ChuyenAnhDaCapXam.ButtonPushedFcn = createCallbackFcn(app, @Button_ChuyenAnhDaCapXamPushed, true);
+            app.Button_ChuyenAnhDaCapXam.Position = [244 27 146 22];
+            app.Button_ChuyenAnhDaCapXam.Text = 'Chuyển ảnh đa cấp xám';
+
+            % Create Button_ChuyenAnhNhiPhan
+            app.Button_ChuyenAnhNhiPhan = uibutton(app.THAOTCCBNTRNNHUIFigure, 'push');
+            app.Button_ChuyenAnhNhiPhan.ButtonPushedFcn = createCallbackFcn(app, @Button_ChuyenAnhNhiPhanPushed, true);
+            app.Button_ChuyenAnhNhiPhan.Position = [489 27 130 22];
+            app.Button_ChuyenAnhNhiPhan.Text = 'Chuyển ảnh nhị phân';
+
+            % Create Label_ThongTinAnh
+            app.Label_ThongTinAnh = uilabel(app.THAOTCCBNTRNNHUIFigure);
+            app.Label_ThongTinAnh.FontColor = [0 0 1];
+            app.Label_ThongTinAnh.Position = [15 238 82 22];
+            app.Label_ThongTinAnh.Text = 'Thông tin ảnh:';
+
+            % Create Label
+            app.Label = uilabel(app.THAOTCCBNTRNNHUIFigure);
+            app.Label.HorizontalAlignment = 'right';
+            app.Label.Position = [46 202 25 22];
+            app.Label.Text = {''; ''};
+
+            % Create TextArea_ThongTinAnh
+            app.TextArea_ThongTinAnh = uitextarea(app.THAOTCCBNTRNNHUIFigure);
+            app.TextArea_ThongTinAnh.Position = [46 75 244 151];
+
+            % Create Label_HienSoAnh
+            app.Label_HienSoAnh = uilabel(app.THAOTCCBNTRNNHUIFigure);
+            app.Label_HienSoAnh.Position = [138 238 117 22];
+            app.Label_HienSoAnh.Text = '';
+
+            % Create Axes_AnhGoc
+            app.Axes_AnhGoc = uiaxes(app.THAOTCCBNTRNNHUIFigure);
+            title(app.Axes_AnhGoc, {'Ảnh gốc'; ''})
+            app.Axes_AnhGoc.XTick = [];
+            app.Axes_AnhGoc.YTick = [];
+            app.Axes_AnhGoc.Position = [5 259 300 185];
+
+            % Create Axes_AnhDaCapXam
+            app.Axes_AnhDaCapXam = uiaxes(app.THAOTCCBNTRNNHUIFigure);
+            title(app.Axes_AnhDaCapXam, 'Ảnh đa cấp xám')
+            app.Axes_AnhDaCapXam.XTick = [];
+            app.Axes_AnhDaCapXam.YTick = [];
+            app.Axes_AnhDaCapXam.Position = [319 259 300 185];
+
+            % Create Axes_AnhNhiPhan
+            app.Axes_AnhNhiPhan = uiaxes(app.THAOTCCBNTRNNHUIFigure);
+            title(app.Axes_AnhNhiPhan, 'Ảnh nhị phân')
+            app.Axes_AnhNhiPhan.XTick = [];
+            app.Axes_AnhNhiPhan.YTick = [];
+            app.Axes_AnhNhiPhan.Position = [319 75 300 185];
+
+            % Show the figure after all components are created
+            app.THAOTCCBNTRNNHUIFigure.Visible = 'on';
+        end
+    end
+
+    % App creation and deletion
+    methods (Access = public)
+
+        % Construct app
+        function app = theFirstApp
+
+            % Create UIFigure and components
+            createComponents(app)
+
+            % Register the app with App Designer
+            registerApp(app, app.THAOTCCBNTRNNHUIFigure)
+
+            if nargout == 0
+                clear app
+            end
+        end
+
+        % Code that executes before app deletion
+        function delete(app)
+
+            % Delete UIFigure when app is deleted
+            delete(app.THAOTCCBNTRNNHUIFigure)
+        end
+    end
+end
