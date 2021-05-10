@@ -1,0 +1,274 @@
+classdef noiseImage < matlab.apps.AppBase
+
+    % Properties that correspond to app components
+    properties (Access = public)
+        CCLOINHIUUIFigure     matlab.ui.Figure
+        Label_TieuDe          matlab.ui.control.Label
+        Button_DocAnh         matlab.ui.control.Button
+        Label_ThongTinAnh     matlab.ui.control.Label
+        Label_SoLuongAnh      matlab.ui.control.Label
+        TextArea_ThongTinAnh  matlab.ui.control.TextArea
+        Button_NhieuMuoiTieu  matlab.ui.control.Button
+        Button_NhieuGaussian  matlab.ui.control.Button
+        Button_NhieuSpeckle   matlab.ui.control.Button
+        Button_NhieuPeriodic  matlab.ui.control.Button
+        UIAxes_AnhXam         matlab.ui.control.UIAxes
+        UIAxes_NhieuMuoiTieuVaNhieuGaussian  matlab.ui.control.UIAxes
+        UIAxes_NhieuSpeckleVaNhieuPeriodic  matlab.ui.control.UIAxes
+    end
+
+    
+    properties (Access = private)
+        img 
+        map
+        colortype
+    end
+    
+
+    % Callbacks that handle component events
+    methods (Access = private)
+
+        % Button pushed function: Button_DocAnh
+        function Button_DocAnhPushed(app, event)
+            [filename, path] = uigetfile({'*.tif'; '*.jpg'; '*.png'}, 'Chọn ảnh');
+            file = strcat(path, filename);
+            [app.img, app.map] = imread(file);
+            imshow(app.img, app.map, 'Parent', app.UIAxes_AnhXam);
+            info = imfinfo(file);
+            a = [];
+            if length(info) > 1
+                app.Label_SoLuongAnh.Text = strcat(strcat("Tập tin chứa: ", num2str(length(info))), " ảnh");
+                a = [a; "THÔNG TIN ẢNH ĐẦU TIÊN"];
+                info = info(1);
+            else
+                app.Label_SoLuongAnh.Text = "";
+            end
+            app.colortype = info.ColorType;
+            fields = fieldnames(info);
+            for i = 1 : length(fields)
+                if isnumeric(info.(char(fields(i))))
+                    value = num2str(info.(char(fields(i))));
+                else
+                    value = info.(char(fields(i)));
+                end
+                s = strcat(fields(i), ": ", value);
+                a = [a; s];
+                a = [a; '--------------------------'];
+            end
+            app.TextArea_ThongTinAnh.Value = a;
+        end
+
+        % Button pushed function: Button_NhieuMuoiTieu
+        function Button_NhieuMuoiTieuPushed(app, event)
+            if app.colortype == "truecolor"
+                rgb = app.img;
+                gray = rgb2gray(rgb);
+                sp = imnoise(gray, 'salt & pepper');
+                imshow(sp, 'Parent', app.UIAxes_NhieuMuoiTieuVaNhieuGaussian);
+            elseif app.colortype == "indexed"
+                ind = app.img;
+                gray = ind2gray(ind, app.map);
+                sp = imnoise(gray, 'salt & pepper');
+                imshow(sp, 'Parent', app.UIAxes_NhieuMuoiTieuVaNhieuGaussian);
+            else
+                gray = app.img;
+                sp = imnoise(gray, 'salt & pepper');
+                imshow(sp, 'Parent', app.UIAxes_NhieuMuoiTieuVaNhieuGaussian);
+            end
+        end
+
+        % Button pushed function: Button_NhieuGaussian
+        function Button_NhieuGaussianPushed(app, event)
+            if app.colortype == "truecolor"
+                rgb = app.img;
+                gray = rgb2gray(rgb);
+                ga = imnoise(gray, 'gaussian');
+                imshow(ga, 'Parent', app.UIAxes_NhieuMuoiTieuVaNhieuGaussian);
+            elseif app.colortype == "indexed"
+                ind = app.img;
+                gray = ind2gray(ind, app.map);
+                ga = imnoise(gray, 'gaussian');
+                imshow(ga, 'Parent', app.UIAxes_NhieuMuoiTieuVaNhieuGaussian);
+            else
+                gray = app.img;
+                ga = imnoise(gray, 'gaussian');
+                imshow(ga, 'Parent', app.UIAxes_NhieuMuoiTieuVaNhieuGaussian);
+            end
+        end
+
+        % Button pushed function: Button_NhieuSpeckle
+        function Button_NhieuSpecklePushed(app, event)
+            if app.colortype == "truecolor"
+                rgb = app.img;
+                gray = rgb2gray(rgb);
+                spk = imnoise(gray, 'speckle');
+                imshow(spk, 'Parent', app.UIAxes_NhieuSpeckleVaNhieuPeriodic);
+            elseif app.colortype == "indexed"
+                ind = app.img;
+                gray = ind2gray(ind, app.map);
+                spk = imnoise(gray, 'speckle');
+                imshow(spk, 'Parent', app.UIAxes_NhieuSpeckleVaNhieuPeriodic);
+            else
+                gray = app.img;
+                spk = imnoise(gray, 'speckle');
+                imshow(spk, 'Parent', app.UIAxes_NhieuSpeckleVaNhieuPeriodic);
+            end
+        end
+
+        % Button pushed function: Button_NhieuPeriodic
+        function Button_NhieuPeriodicPushed(app, event)
+            if app.colortype == "truecolor"
+                rgb = app.img;
+                t = rgb2gray(rgb);
+                s = size(t);   
+                [x,y] = meshgrid(1:s(2),1:s(1));
+                p = sin(x/3+y/5)+1;
+                pn = (im2double(t)+p/2)/2;
+                imshow(pn, 'Parent', app.UIAxes_NhieuSpeckleVaNhieuPeriodic);
+            elseif app.colortype == "indexed"
+                ind = app.img;
+                t = ind2gray(ind, app.map);
+                s = size(t);   
+                [x,y] = meshgrid(1:s(2),1:s(1));
+                p = sin(x/3+y/5)+1;
+                pn = (im2double(t)+p/2)/2;
+                imshow(pn, 'Parent', app.UIAxes_NhieuSpeckleVaNhieuPeriodic);
+            else
+                t = app.img;
+                s = size(t);   
+                [x,y] = meshgrid(1:s(2),1:s(1));
+                p = sin(x/3+y/5)+1;
+                pn = (im2double(t)+p/2)/2;
+                imshow(pn, 'Parent', app.UIAxes_NhieuSpeckleVaNhieuPeriodic);
+            end
+        end
+    end
+
+    % Component initialization
+    methods (Access = private)
+
+        % Create UIFigure and components
+        function createComponents(app)
+
+            % Create CCLOINHIUUIFigure and hide until all components are created
+            app.CCLOINHIUUIFigure = uifigure('Visible', 'off');
+            app.CCLOINHIUUIFigure.Position = [100 100 640 480];
+            app.CCLOINHIUUIFigure.Name = 'CÁC LOẠI NHIỄU';
+            app.CCLOINHIUUIFigure.Icon = 'lol.jpg';
+
+            % Create Label_TieuDe
+            app.Label_TieuDe = uilabel(app.CCLOINHIUUIFigure);
+            app.Label_TieuDe.HorizontalAlignment = 'center';
+            app.Label_TieuDe.FontSize = 18;
+            app.Label_TieuDe.FontWeight = 'bold';
+            app.Label_TieuDe.FontColor = [1 0 0];
+            app.Label_TieuDe.Position = [171 445 349 28];
+            app.Label_TieuDe.Text = 'Phục hồi ảnh: Các loại nhiễu';
+
+            % Create Button_DocAnh
+            app.Button_DocAnh = uibutton(app.CCLOINHIUUIFigure, 'push');
+            app.Button_DocAnh.ButtonPushedFcn = createCallbackFcn(app, @Button_DocAnhPushed, true);
+            app.Button_DocAnh.FontWeight = 'bold';
+            app.Button_DocAnh.Position = [11 11 100 22];
+            app.Button_DocAnh.Text = 'Đọc ảnh';
+
+            % Create Label_ThongTinAnh
+            app.Label_ThongTinAnh = uilabel(app.CCLOINHIUUIFigure);
+            app.Label_ThongTinAnh.FontWeight = 'bold';
+            app.Label_ThongTinAnh.FontAngle = 'italic';
+            app.Label_ThongTinAnh.FontColor = [0 0 1];
+            app.Label_ThongTinAnh.Position = [26 240 88 22];
+            app.Label_ThongTinAnh.Text = 'Thông tin ảnh:';
+
+            % Create Label_SoLuongAnh
+            app.Label_SoLuongAnh = uilabel(app.CCLOINHIUUIFigure);
+            app.Label_SoLuongAnh.FontColor = [1 0 0];
+            app.Label_SoLuongAnh.Position = [138 240 163 22];
+            app.Label_SoLuongAnh.Text = '';
+
+            % Create TextArea_ThongTinAnh
+            app.TextArea_ThongTinAnh = uitextarea(app.CCLOINHIUUIFigure);
+            app.TextArea_ThongTinAnh.Position = [26 56 275 174];
+
+            % Create Button_NhieuMuoiTieu
+            app.Button_NhieuMuoiTieu = uibutton(app.CCLOINHIUUIFigure, 'push');
+            app.Button_NhieuMuoiTieu.ButtonPushedFcn = createCallbackFcn(app, @Button_NhieuMuoiTieuPushed, true);
+            app.Button_NhieuMuoiTieu.FontWeight = 'bold';
+            app.Button_NhieuMuoiTieu.Position = [138 11 105 22];
+            app.Button_NhieuMuoiTieu.Text = 'Nhiễu muối tiêu';
+
+            % Create Button_NhieuGaussian
+            app.Button_NhieuGaussian = uibutton(app.CCLOINHIUUIFigure, 'push');
+            app.Button_NhieuGaussian.ButtonPushedFcn = createCallbackFcn(app, @Button_NhieuGaussianPushed, true);
+            app.Button_NhieuGaussian.FontWeight = 'bold';
+            app.Button_NhieuGaussian.Position = [268 11 106 22];
+            app.Button_NhieuGaussian.Text = 'Nhiễu Gaussian';
+
+            % Create Button_NhieuSpeckle
+            app.Button_NhieuSpeckle = uibutton(app.CCLOINHIUUIFigure, 'push');
+            app.Button_NhieuSpeckle.ButtonPushedFcn = createCallbackFcn(app, @Button_NhieuSpecklePushed, true);
+            app.Button_NhieuSpeckle.FontWeight = 'bold';
+            app.Button_NhieuSpeckle.Position = [407 11 100 22];
+            app.Button_NhieuSpeckle.Text = 'Nhiễu Speckle';
+
+            % Create Button_NhieuPeriodic
+            app.Button_NhieuPeriodic = uibutton(app.CCLOINHIUUIFigure, 'push');
+            app.Button_NhieuPeriodic.ButtonPushedFcn = createCallbackFcn(app, @Button_NhieuPeriodicPushed, true);
+            app.Button_NhieuPeriodic.FontWeight = 'bold';
+            app.Button_NhieuPeriodic.Position = [530 11 100 22];
+            app.Button_NhieuPeriodic.Text = 'Nhiễu Periodic';
+
+            % Create UIAxes_AnhXam
+            app.UIAxes_AnhXam = uiaxes(app.CCLOINHIUUIFigure);
+            title(app.UIAxes_AnhXam, 'Ảnh Xám')
+            zlabel(app.UIAxes_AnhXam, 'Z')
+            app.UIAxes_AnhXam.XTick = [];
+            app.UIAxes_AnhXam.YTick = [];
+            app.UIAxes_AnhXam.Position = [1 261 300 185];
+
+            % Create UIAxes_NhieuMuoiTieuVaNhieuGaussian
+            app.UIAxes_NhieuMuoiTieuVaNhieuGaussian = uiaxes(app.CCLOINHIUUIFigure);
+            title(app.UIAxes_NhieuMuoiTieuVaNhieuGaussian, 'Nhiễu Muối tiêu / Gaussian')
+            zlabel(app.UIAxes_NhieuMuoiTieuVaNhieuGaussian, 'Z')
+            app.UIAxes_NhieuMuoiTieuVaNhieuGaussian.XTick = [];
+            app.UIAxes_NhieuMuoiTieuVaNhieuGaussian.YTick = [];
+            app.UIAxes_NhieuMuoiTieuVaNhieuGaussian.Position = [330 261 300 185];
+
+            % Create UIAxes_NhieuSpeckleVaNhieuPeriodic
+            app.UIAxes_NhieuSpeckleVaNhieuPeriodic = uiaxes(app.CCLOINHIUUIFigure);
+            title(app.UIAxes_NhieuSpeckleVaNhieuPeriodic, 'Nhiễu Speckle / Periodic')
+            zlabel(app.UIAxes_NhieuSpeckleVaNhieuPeriodic, 'Z')
+            app.UIAxes_NhieuSpeckleVaNhieuPeriodic.XTick = [];
+            app.UIAxes_NhieuSpeckleVaNhieuPeriodic.YTick = [];
+            app.UIAxes_NhieuSpeckleVaNhieuPeriodic.Position = [330 40 300 201];
+
+            % Show the figure after all components are created
+            app.CCLOINHIUUIFigure.Visible = 'on';
+        end
+    end
+
+    % App creation and deletion
+    methods (Access = public)
+
+        % Construct app
+        function app = noiseImage
+
+            % Create UIFigure and components
+            createComponents(app)
+
+            % Register the app with App Designer
+            registerApp(app, app.CCLOINHIUUIFigure)
+
+            if nargout == 0
+                clear app
+            end
+        end
+
+        % Code that executes before app deletion
+        function delete(app)
+
+            % Delete UIFigure when app is deleted
+            delete(app.CCLOINHIUUIFigure)
+        end
+    end
+end
